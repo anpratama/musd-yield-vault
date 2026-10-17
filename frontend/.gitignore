@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+*.log
+.env.local
+.env*.local
+public/deployments-31611.json
+.DS_Store
