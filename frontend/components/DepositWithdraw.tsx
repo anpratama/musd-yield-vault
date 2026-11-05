@@ -154,7 +154,7 @@ export function DepositWithdraw({ vault }: { vault: string }) {
 
   return (
     <div className="card">
-      <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+      <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
         {(["deposit", "withdraw"] as const).map((t) => (
           <button
             key={t}
@@ -164,7 +164,7 @@ export function DepositWithdraw({ vault }: { vault: string }) {
               reset();
             }}
             className={`rounded-lg py-2 text-sm font-semibold capitalize transition ${
-              tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+              tab === t ? "bg-white text-slate-900 shadow-sm dark:bg-slate-600 dark:text-white" : "text-slate-500 dark:text-slate-400"
             }`}
           >
             {t}
@@ -173,7 +173,7 @@ export function DepositWithdraw({ vault }: { vault: string }) {
       </div>
 
       {!user ? (
-        <p className="py-6 text-center text-sm text-slate-500">
+        <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Connect your wallet to {tab}.
         </p>
       ) : (
@@ -198,12 +198,12 @@ export function DepositWithdraw({ vault }: { vault: string }) {
                     : ""
                 )
               }
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-200"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               MAX
             </button>
           </div>
-          <div className="mt-1.5 flex justify-between text-xs text-slate-500">
+          <div className="mt-1.5 flex justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>
               Wallet: {fmtMusd(musdBalance as bigint | undefined)} MUSD
             </span>
@@ -213,13 +213,13 @@ export function DepositWithdraw({ vault }: { vault: string }) {
           </div>
 
           {tab === "deposit" && parsed !== null && (
-            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               You receive ≈{" "}
               <strong>{fmtShares(previewShares as bigint | undefined)} yvMUSD</strong>
             </div>
           )}
           {tab === "withdraw" && parsed !== null && (
-            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
               Burns ≈{" "}
               <strong>{fmtShares(previewBurn as bigint | undefined)} yvMUSD</strong>
               , you receive <strong>{fmtMusd(parsed)} MUSD</strong>
@@ -230,7 +230,7 @@ export function DepositWithdraw({ vault }: { vault: string }) {
             {tab === "deposit" ? (
               <>
                 {paused ? (
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
                     Deposits are paused. Withdrawals remain open.
                   </div>
                 ) : needsApproval ? (
@@ -263,9 +263,9 @@ export function DepositWithdraw({ vault }: { vault: string }) {
           </div>
 
           {txHash && (
-            <div className="mt-3 text-center text-sm text-slate-500">
+            <div className="mt-3 text-center text-sm text-slate-500 dark:text-slate-400">
               {confirmed ? (
-                <span className="text-emerald-600 font-medium">
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                   Confirmed · <TxLink hash={txHash} />
                 </span>
               ) : (

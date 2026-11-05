@@ -14,23 +14,25 @@ import { Strategies } from "../components/Strategies";
 import { DepositWithdraw } from "../components/DepositWithdraw";
 import { NotDeployed } from "../components/NotDeployed";
 import { AddressLink } from "../components/ExplorerLink";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 function Header() {
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight">
-            MUSD Yield Vault <span className="text-mezo-600">yvMUSD</span>
+            MUSD Yield Vault <span className="text-mezo-600 dark:text-mezo-500">yvMUSD</span>
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             ERC-4626 auto-yield vault on Mezo · built for the Mezo Buildathon
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 sm:inline">
+          <span className="hidden rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 sm:inline">
             Mezo Testnet
           </span>
+          <ThemeToggle />
           <ConnectButton showBalance={false} />
         </div>
       </div>
@@ -58,14 +60,14 @@ export default function Home() {
       <Header />
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         {deployment === undefined ? (
-          <div className="card text-sm text-slate-500">Loading…</div>
+          <div className="card text-sm text-slate-500 dark:text-slate-400">Loading…</div>
         ) : !vault ? (
           <NotDeployed />
         ) : (
           <>
             {wrongNetwork && (
-              <div className="card border-amber-300 bg-amber-50">
-                <p className="text-sm text-amber-800">
+              <div className="card border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
                   You are connected to the wrong network. Please switch to{" "}
                   <strong>Mezo Testnet</strong>.
                 </p>
@@ -94,20 +96,20 @@ export default function Home() {
               <h2 className="text-lg font-semibold">Contracts</h2>
               <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="text-slate-500">Vault (yvMUSD)</dt>
+                  <dt className="text-slate-500 dark:text-slate-400">Vault (yvMUSD)</dt>
                   <dd>
                     <AddressLink address={vault} />
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="text-slate-500">MUSD (asset)</dt>
+                  <dt className="text-slate-500 dark:text-slate-400">MUSD (asset)</dt>
                   <dd>
                     <AddressLink address={MUSD_ADDRESS} />
                   </dd>
                 </div>
                 {deployment.spStrategy && (
                   <div className="flex items-center justify-between gap-4">
-                    <dt className="text-slate-500">Stability Pool Strategy</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">Stability Pool Strategy</dt>
                     <dd>
                       <AddressLink address={deployment.spStrategy} />
                     </dd>
@@ -115,7 +117,7 @@ export default function Home() {
                 )}
                 {deployment.mockStrategy && (
                   <div className="flex items-center justify-between gap-4">
-                    <dt className="text-slate-500">Mock Yield Strategy</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">Mock Yield Strategy</dt>
                     <dd>
                       <AddressLink address={deployment.mockStrategy} />
                     </dd>
@@ -126,7 +128,7 @@ export default function Home() {
           </>
         )}
 
-        <footer className="pt-4 text-center text-xs text-slate-400">
+        <footer className="pt-4 text-center text-xs text-slate-400 dark:text-slate-500">
           MUSD Yield Vault · Mezo Buildathon (Track 1: DeFi) · Mezo testnet
           (chain 31611) · contracts unaudited — hackathon demo
         </footer>

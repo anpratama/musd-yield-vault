@@ -13,7 +13,7 @@ export function AddressLink({
       href={explorerAddress(address)}
       target="_blank"
       rel="noreferrer"
-      className={`font-mono text-mezo-600 hover:text-mezo-700 hover:underline ${className}`}
+      className={`font-mono text-mezo-600 dark:text-mezo-500 hover:text-mezo-700 hover:underline ${className}`}
       title={address}
     >
       {shortAddress(address)}
@@ -27,7 +27,7 @@ export function TxLink({ hash }: { hash: string }) {
       href={explorerTx(hash)}
       target="_blank"
       rel="noreferrer"
-      className="font-mono text-mezo-600 hover:underline"
+      className="font-mono text-mezo-600 dark:text-mezo-500 hover:underline"
     >
       {shortAddress(hash)}
     </a>

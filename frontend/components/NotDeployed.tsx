@@ -3,11 +3,11 @@ import { explorerAddress } from "../lib/chain";
 
 export function NotDeployed() {
   return (
-    <div className="card border-amber-300 bg-amber-50">
-      <h2 className="text-lg font-semibold text-amber-900">
+    <div className="card border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950">
+      <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
         Vault not deployed yet
       </h2>
-      <p className="mt-2 text-sm text-amber-800">
+      <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
         The frontend is ready, but no vault deployment was found. Deploy the
         contracts to Mezo testnet first:
       </p>
@@ -17,7 +17,7 @@ forge script script/Deploy.s.sol \\
   --rpc-url https://rpc.test.mezo.org \\
   --private-key $PRIVATE_KEY --broadcast`}
       </pre>
-      <p className="mt-3 text-sm text-amber-800">
+      <p className="mt-3 text-sm text-amber-800 dark:text-amber-200">
         Then either set{" "}
         <span className="font-mono">NEXT_PUBLIC_VAULT_ADDRESS</span> (and{" "}
         <span className="font-mono">NEXT_PUBLIC_SP_STRATEGY_ADDRESS</span>) in{" "}
@@ -25,10 +25,10 @@ forge script script/Deploy.s.sol \\
         <span className="font-mono">deployments-31611.json</span> exists next to
         the repo root — it is picked up automatically on the next dev/build.
       </p>
-      <p className="mt-3 text-sm text-amber-800">
+      <p className="mt-3 text-sm text-amber-800 dark:text-amber-200">
         MUSD (testnet):{" "}
         <a
-          className="font-mono text-amber-900 underline"
+          className="font-mono text-amber-900 dark:text-amber-100 underline"
           href={explorerAddress(MUSD_ADDRESS)}
           target="_blank"
           rel="noreferrer"
