@@ -10,6 +10,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IStrategy} from "./IStrategy.sol";
+import {BtcValuation} from "./libraries/BtcValuation.sol";
 
 /**
  * @title MUSDVault
@@ -25,7 +26,15 @@ import {IStrategy} from "./IStrategy.sol";
  *  - {harvest}: (owner/keeper) claims rewards from every strategy and
  *    compounds claimed MUSD back into the strategies per target allocation.
  *    Native-token rewards (e.g. BTC gains from the Stability Pool) are held
- *    by the vault, not auto-swapped — see README.
+ *    by the vault, not auto-swapped — but since Wave 2 they ARE counted in
+ *    {totalAssets} at the BTC/USD feed price (see below), so they accrue
+ *    to share price instead of sitting frozen and uncounted (Wave 1 HIGH).
+ *  - BTC-gain valuation: pending/held native BTC (in strategies and in the
+ *    vault itself) is valued in MUSD via a Chainlink-style BTC/USD feed
+ *    ({BtcValuation}). If no feed is configured or the feed is down/stale,
+ *    BTC is valued at 0 — conservative, never a guessed price. Note that
+ *    redemptions still settle in MUSD: a payout is limited by the vault's
+ *    actual MUSD liquidity until held BTC is swapped to MUSD.
  *  - Withdrawals ALWAYS work, even while paused: {_withdraw} automatically
  *    pulls shortfall liquidity from strategies. {pause} is an emergency brake
  *    on deposits and admin fund movements, never on user exits.
@@ -48,6 +57,18 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant BPS_DENOMINATOR = 10_000;
+
+    /// @notice Mezo's native BTC/USD price precompile (Chainlink-style).
+    address public constant MEZO_BTC_USD_FEED =
+        0x7b7c000000000000000000000000000000000015;
+
+    /// @notice Mezo testnet chain id.
+    uint256 public constant MEZO_TESTNET_CHAIN_ID = 31611;
+
+    /// @notice BTC/USD price feed used to value native BTC held by the
+    /// vault (e.g. claimed Stability Pool gains) in {totalAssets}.
+    /// address(0) = valuation disabled (held BTC counted as 0).
+    address public immutable btcPriceFeed;
 
     struct StrategyInfo {
         bool active;
@@ -89,15 +110,25 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     /**
      * @param _musd MUSD token address (NOT hardcoded; injected at deploy).
      * @param _owner Admin (multisig recommended for production).
+     * @param _btcPriceFeed BTC/USD feed for valuing held native BTC.
+     *        Pass address(0) to auto-resolve to Mezo's native price
+     *        precompile on testnet (chain 31611); on other chains
+     *        address(0) leaves valuation disabled (BTC counted as 0).
      */
     constructor(
         IERC20 _musd,
         address _owner,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        address _btcPriceFeed
     ) ERC4626(_musd) ERC20(_name, _symbol) Ownable(_owner) {
         require(address(_musd) != address(0), "MUSDVault: zero asset");
         require(_owner != address(0), "MUSDVault: zero owner");
+        address feed = _btcPriceFeed;
+        if (feed == address(0) && block.chainid == MEZO_TESTNET_CHAIN_ID) {
+            feed = MEZO_BTC_USD_FEED;
+        }
+        btcPriceFeed = feed;
     }
 
     // ---------------------------------------------------------------------
@@ -120,7 +151,13 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         return super.mint(shares, receiver);
     }
 
-    /// @notice Vault TVL in MUSD: idle balance + active strategies' positions.
+    /**
+     * @notice Vault TVL in MUSD: idle MUSD balance + active strategies'
+     * positions (each strategy's totalAssets already includes the MUSD
+     * value of its pending BTC gains) + the MUSD value of native BTC held
+     * directly by the vault (claimed gains), valued via the BTC/USD feed.
+     * Held BTC is valued at 0 if no feed is set or the feed is down/stale.
+     */
     function totalAssets() public view override returns (uint256) {
         uint256 total = IERC20(asset()).balanceOf(address(this));
         uint256 len = strategyList.length;
@@ -128,6 +165,7 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
             address s = strategyList[i];
             if (strategies[s].active) total += IStrategy(s).totalAssets();
         }
+        total += BtcValuation.musdValueOf(btcPriceFeed, address(this).balance);
         return total;
     }
 
@@ -335,6 +373,10 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
             uint256 desired = _desiredAllocation(total, info);
             if (desired > current) {
                 uint256 amount = Math.min(desired - current, idle);
+                if (amount == 0) continue; // nothing deployable; a 0-amount
+                // deposit would revert at the Stability Pool (amount != 0
+                // check) once BTC-gain value inflates `desired` past the
+                // strategy's MUSD position.
                 musd.safeIncreaseAllowance(s, amount);
                 IStrategy(s).deposit(amount);
                 idle -= amount;
@@ -343,8 +385,17 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    /// @dev Pull `shortfall` MUSD from strategies (registration order).
+    /**
+     * @dev Pull `shortfall` MUSD from strategies (registration order).
+     * Measures what each strategy ACTUALLY delivered: a strategy whose
+     * underlying protocol is temporarily blocked (e.g. the Stability Pool
+     * gating withdrawals on trove health) may deliver less than requested
+     * — possibly 0 — without reverting. The pull then continues to the
+     * next strategy, and only fails with this vault's own error if total
+     * delivered MUSD cannot cover the shortfall.
+     */
     function _pullFromStrategies(uint256 shortfall) internal {
+        IERC20 musd = IERC20(asset());
         uint256 len = strategyList.length;
         for (uint256 i = 0; i < len && shortfall > 0; ++i) {
             address s = strategyList[i];
@@ -352,9 +403,12 @@ contract MUSDVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
             uint256 bal = IStrategy(s).totalAssets();
             if (bal == 0) continue;
             uint256 take = Math.min(bal, shortfall);
+            uint256 idleBefore = musd.balanceOf(address(this));
             IStrategy(s).withdraw(take);
-            emit StrategyWithdrawal(s, take);
-            shortfall -= take;
+            uint256 got = musd.balanceOf(address(this)) - idleBefore;
+            if (got > take) got = take; // defensive: never over-credit
+            if (got > 0) emit StrategyWithdrawal(s, got);
+            shortfall -= got;
         }
         require(shortfall == 0, "MUSDVault: insufficient liquidity");
     }

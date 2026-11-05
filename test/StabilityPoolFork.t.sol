@@ -59,13 +59,15 @@ contract StabilityPoolForkTest is Test {
             IERC20(MUSD_ADDR),
             address(this),
             "Mezo MUSD Yield Vault",
-            "yvMUSD"
+            "yvMUSD",
+            address(0) // auto-resolves to Mezo's BTC/USD precompile on 31611
         );
-        // address(0) -> auto-resolve to the verified testnet pool.
+        // address(0) -> auto-resolve to the verified testnet pool and feed.
         strategy = new StabilityPoolStrategy(
             MUSD_ADDR,
             address(0),
-            address(vault)
+            address(vault),
+            address(0)
         );
         assertEq(
             address(strategy.stabilityPool()),
@@ -111,7 +113,10 @@ contract StabilityPoolForkTest is Test {
      * for everyone (not just this vault). This test therefore accepts both
      * states:
      *  - withdrawals open  -> full redeem works end-to-end;
-     *  - withdrawals gated -> our stack surfaces the exact protocol revert.
+     *  - withdrawals gated -> the Wave 2 adapter catches the pool revert,
+     *    so the vault surfaces its own clear error ("MUSDVault:
+     *    insufficient liquidity") instead of the raw pool revert, and the
+     *    position stays intact in the pool.
      */
     function test_Fork_WithdrawReflectsProtocolState() public {
         vm.startPrank(user);
@@ -125,10 +130,9 @@ contract StabilityPoolForkTest is Test {
             assertApproxEqAbs(out, 1_000 * ONE, 1e12);
             assertEq(strategy.totalAssets(), 0);
         } catch Error(string memory reason) {
-            assertEq(
-                reason,
-                "StabilityPool: Cannot withdraw while there are troves with ICR < MCR"
-            );
+            assertEq(reason, "MUSDVault: insufficient liquidity");
+            // Graceful degradation: funds are still in the pool, not lost.
+            assertEq(strategy.totalAssets(), 1_000 * ONE);
         }
     }
 

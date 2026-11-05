@@ -17,6 +17,10 @@ import {MockYieldStrategy} from "../src/MockYieldStrategy.sol";
  *                           when chain id is 31611)
  *   OWNER_ADDRESS           vault/strategy owner (default: broadcaster)
  *   MOCK_APY_BPS            simulated APY for the mock strategy (default: 800)
+ *   BTC_PRICE_FEED          BTC/USD feed used to value BTC gains in
+ *                           totalAssets (default: address(0) -> vault and
+ *                           strategy auto-resolve Mezo's native price
+ *                           precompile when chain id is 31611)
  *   PRIVATE_KEY             deployer key (forge --private-key also works)
  *
  * Example (Mezo testnet):
@@ -34,6 +38,7 @@ contract Deploy is Script {
     function run() external {
         address musdAddr = vm.envOr("MUSD_ADDRESS", TESTNET_MUSD);
         address spAddr = vm.envOr("STABILITY_POOL_ADDRESS", address(0));
+        address feedAddr = vm.envOr("BTC_PRICE_FEED", address(0));
         uint256 mockApy = vm.envOr("MOCK_APY_BPS", uint256(800)); // 8%
 
         uint256 deployerKey = vm.envUint("PRIVATE_KEY");
@@ -51,13 +56,15 @@ contract Deploy is Script {
             IERC20(musdAddr),
             owner,
             "Mezo MUSD Yield Vault",
-            "yvMUSD"
+            "yvMUSD",
+            feedAddr
         );
 
         StabilityPoolStrategy spStrategy = new StabilityPoolStrategy(
             musdAddr,
             spAddr,
-            address(vault)
+            address(vault),
+            feedAddr
         );
 
         MockYieldStrategy mockStrategy = new MockYieldStrategy(

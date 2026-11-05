@@ -25,7 +25,8 @@ contract MUSDVaultTest is Test {
             IERC20(address(musd)),
             owner,
             "Mezo MUSD Yield Vault",
-            "yvMUSD"
+            "yvMUSD",
+            address(0) // no BTC feed in unit tests: held BTC valued at 0
         );
         // 10% and 5% simulated APY
         s1 = new MockYieldStrategy(IERC20(address(musd)), address(vault), 1000);

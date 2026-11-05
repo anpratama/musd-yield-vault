@@ -34,7 +34,10 @@ contract MockYieldStrategy is IStrategy, Ownable, ReentrancyGuard {
     IERC20 public immutable musd;
 
     /// @notice The vault allowed to call deposit/withdraw/claimRewards.
-    address public vault;
+    /// Immutable: set once in the constructor. (The Wave 1 version had an
+    /// owner-only `setVault` that allowed redirecting funds to an arbitrary
+    /// address; removed — same fix as {StabilityPoolStrategy}.)
+    address public immutable vault;
 
     /// @notice Simulated APY in basis points (1000 = 10%).
     uint256 public apyBps;
@@ -51,7 +54,6 @@ contract MockYieldStrategy is IStrategy, Ownable, ReentrancyGuard {
     uint256 public constant BPS_DENOMINATOR = 10_000;
     uint256 public constant SECONDS_PER_YEAR = 365 days;
 
-    event VaultUpdated(address indexed vault);
     event ApyUpdated(uint256 apyBps);
     event RewardsFunded(address indexed from, uint256 amount);
     event Deposited(uint256 amount);
@@ -64,6 +66,7 @@ contract MockYieldStrategy is IStrategy, Ownable, ReentrancyGuard {
         uint256 _apyBps
     ) Ownable(msg.sender) {
         require(address(_musd) != address(0), "MockYieldStrategy: zero musd");
+        require(_vault != address(0), "MockYieldStrategy: zero vault");
         musd = _musd;
         vault = _vault;
         apyBps = _apyBps;
@@ -73,12 +76,6 @@ contract MockYieldStrategy is IStrategy, Ownable, ReentrancyGuard {
     modifier onlyVault() {
         require(msg.sender == vault, "MockYieldStrategy: only vault");
         _;
-    }
-
-    /// @notice Point the strategy at a (new) vault. Owner-only.
-    function setVault(address _vault) external onlyOwner {
-        vault = _vault;
-        emit VaultUpdated(_vault);
     }
 
     /// @notice Update the simulated APY. Owner-only (demo/keeper control).
