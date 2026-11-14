@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "MUSD Yield Vault — Mezo Buildathon",
@@ -14,16 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Set the theme class before first paint (stored choice, else OS preference) */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark");}}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${inter.variable} ${spaceGrotesk.variable}`}>
         <Providers>{children}</Providers>
       </body>
     </html>

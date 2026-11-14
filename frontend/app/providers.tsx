@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   darkTheme,
   getDefaultConfig,
-  lightTheme,
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
@@ -21,25 +20,19 @@ const config = getDefaultConfig({
   ssr: true,
 });
 
+// Reflex-style UI is dark-only; keep the wallet UI dark with a Mezo-orange accent.
+const theme = darkTheme({
+  accentColor: "#f97316",
+  accentColorForeground: "#ffffff",
+  borderRadius: "large",
+});
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
-  // Keep RainbowKit (connect button + wallet modal) in sync with the
-  // `dark` class that the theme toggle flips on <html>.
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    const root = document.documentElement;
-    const sync = () => setDark(root.classList.contains("dark"));
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={dark ? darkTheme() : lightTheme()}>
-          {children}
-        </RainbowKitProvider>
+        <RainbowKitProvider theme={theme}>{children}</RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

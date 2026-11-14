@@ -24,9 +24,9 @@ function Stat({
 }) {
   return (
     <div className="card">
-      <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 text-2xl font-bold tracking-tight">{value}</div>
-      {sub && <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{sub}</div>}
+      <div className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">{label}</div>
+      <div className="font-display mt-1.5 text-2xl font-bold tracking-tight">{value}</div>
+      {sub && <div className="mt-1 text-xs text-zinc-500">{sub}</div>}
     </div>
   );
 }
@@ -70,7 +70,7 @@ export function Stats({
   return (
     <div>
       {paused && (
-        <div className="mb-4 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+        <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           The vault is currently <strong>paused</strong>: deposits are disabled,
           but withdrawals remain open at all times.
         </div>
